@@ -49,20 +49,29 @@ all₃ p (x ∷ xs) = allCons (p x) (all₃ p xs)
 
 -- Exercise: Implement the functions below --
 
-postulate forget∈ : ∀ {A} {x : A} {xs} → x ∈ xs → Nat
--- forget∈ i = {!!}
+forget∈ : ∀ {A} {x : A} {xs} → x ∈ xs → Nat
+forget∈ (zero p) = zero
+forget∈ (suc i) = suc (forget∈ i)
 
-postulate find : ∀ {A : Set} {{EqA : Eq A}} (x : A) (xs : List A) → Maybe (x ∈ xs)
--- find x xs = {!!}
+find : ∀ {A : Set} {{EqA : Eq A}} (x : A) (xs : List A) → Maybe (x ∈ xs)
+find x [] = nothing
+find x (y ∷ xs) with x == y
+... | yes p = just (zero p)
+... | no  _ = suc <$> find x xs
 
-postulate lookup∈ : ∀ {A : Set} {P : A → Set} {xs x} → All P xs → x ∈ xs → P x
--- lookup∈ xs i = {!!}
+lookup∈ : ∀ {A : Set} {P : A → Set} {xs x} → All P xs → x ∈ xs → P x
+lookup∈ (p ∷ xs₁) (zero refl) = p
+lookup∈ (p ∷ xs₁) (suc i) = lookup∈ xs₁ i
 
-postulate forgetAll : ∀ {A} {P : A → Set} {xs} → All P xs → List (Σ A P)
--- forgetAll ps = {!!}
+forgetAll : ∀ {A} {P : A → Set} {xs} → All P xs → List (Σ A P)
+forgetAll [] = []
+forgetAll {xs = x ∷ _} (p ∷ ps) = (x , p) ∷ forgetAll ps
 
-postulate filterMaybe : {A : Set} {P : A → Set} → (∀ x → Maybe (P x)) → List A → List (Σ A P)
--- filterMaybe p xs = {!!}
+filterMaybe : {A : Set} {P : A → Set} → (∀ x → Maybe (P x)) → List A → List (Σ A P)
+filterMaybe p [] = []
+filterMaybe p (x ∷ xs) with p x
+... | just pr = (x , pr) ∷ filterMaybe p xs
+... | nothing = filterMaybe p xs
 
 --- Path ------------------------------------------------------------------
 
@@ -73,16 +82,18 @@ data Path {I : Set} (E : I → I → Set) : I → I → Set where
   _∷_ : ∀ {i j k} → E i j → Path E j k → Path E i k
 
 -- Exercise: Solve the following maze.
-postulate maze : {E : Nat → Nat → Set} →
+maze : {E : Nat → Nat → Set} →
                  (∀ {n} → E n (2 * n + 1)) →
                  (∀ {n} → E n (n div 3)) →
                  Path E 9 10
--- maze up dn = {!!}
+maze up dn = dn ∷ up ∷ up ∷ up ∷ dn ∷ []
 
 -- Exercise: Implement map and join.
-postulate mapPath : ∀ {I} {E₁ E₂ : I → I → Set} {f : I → I} (g : ∀ {i j} → E₁ i j → E₂ (f i) (f j)) →
+mapPath : ∀ {I} {E₁ E₂ : I → I → Set} {f : I → I} (g : ∀ {i j} → E₁ i j → E₂ (f i) (f j)) →
                     ∀ {i j} → Path E₁ i j → Path E₂ (f i) (f j)
--- mapPath g xs = {!!}
+mapPath g [] = []
+mapPath g (x ∷ xs) = g x ∷ mapPath g xs
 
-postulate joinPath : ∀ {I} {E : I → I → Set} {i j k} → Path E i j → Path E j k → Path E i k
--- joinPath xs ys = {!!}
+joinPath : ∀ {I} {E : I → I → Set} {i j k} → Path E i j → Path E j k → Path E i k
+joinPath [] ys = ys
+joinPath (x ∷ xs) ys = x ∷ joinPath xs ys
