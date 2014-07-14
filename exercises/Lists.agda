@@ -65,7 +65,7 @@ lookup∈ (p ∷ xs₁) (suc i) = lookup∈ xs₁ i
 
 forgetAll : ∀ {A} {P : A → Set} {xs} → All P xs → List (Σ A P)
 forgetAll [] = []
-forgetAll {xs = x ∷ _} (p ∷ ps) = (x , p) ∷ forgetAll ps
+forgetAll (p ∷ ps) = (_ , p) ∷ forgetAll ps
 
 filterMaybe : {A : Set} {P : A → Set} → (∀ x → Maybe (P x)) → List A → List (Σ A P)
 filterMaybe p [] = []
