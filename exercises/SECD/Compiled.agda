@@ -8,27 +8,32 @@ open import Lists
 
 open import Term
 open import Term.Show
-open Term.Unchecked
+open Term.WellTyped
 
-Control : Set
+-- Cxt → StackType → StackType
 
-data Instr : Set where
-  access : Name → Instr
-  close  : Name → Control → Instr
-  call   : Instr
-  lit    : Nat → Instr
-  suc    : Instr
+StackType : Set
+StackType = List Type
 
-Control = List Instr
+Control : Cxt → StackType → StackType → Set
 
-compile′ : Term → Control → Control
-compile′ (var x)     c = access x ∷ c
+data Instr (Γ : Cxt) : StackType → StackType → Set where
+  access : ∀ {Δ x a} → (x , a) ∈ Γ → Instr Γ Δ (a ∷ Δ)
+  close  : ∀ {Δ b} (x : Name) → (a : Type) → Control ((x , a) ∷ Γ) [] (b ∷ []) → Instr Γ Δ ((a => b) ∷ Δ)
+  call   : ∀ {Δ a b} → Instr Γ ((a => b) ∷ a ∷ Δ) (b ∷ Δ)
+  lit    : ∀ {Δ} → Nat → Instr Γ Δ (nat ∷ Δ)
+  suc    : ∀ {Δ} → Instr Γ Δ ((nat => nat) ∷ Δ)
+
+Control Γ = Path (Instr Γ)
+
+compile′ : ∀ {Γ Δ a b} → Term Γ a → Control Γ (a ∷ Δ) (b ∷ []) → Control Γ Δ (b ∷ [])
+compile′ (var x i)   c = access i ∷ c
 compile′ (app u v)   c = compile′ v $ compile′ u $ call ∷ c
-compile′ (lam x a v) c = close x (compile′ v []) ∷ c
+compile′ (lam x a v) c = close x a (compile′ v []) ∷ c
 compile′ (lit n)     c = lit n ∷ c
 compile′ suc         c = suc ∷ c
 
-compile : Term → Control
+compile : ∀ {Γ a} → Term Γ a → Control Γ [] (a ∷ [])
 compile v = compile′ v []
 
 -- Exercise:
